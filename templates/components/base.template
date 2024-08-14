@@ -1,0 +1,19 @@
+import {useState, useEffect} from 'react';
+import { View, Text } from 'react-native'
+
+interface ${ComponentName}Props {
+
+}
+
+export default function ${ComponentName}({}: ${ComponentName}Props) { 
+  const [_state, _setState] = useState(null); // Replace by your state...
+
+  useEffect(()=>{
+      // Write your code here...
+  },[]);
+
+
+  return (
+    <View><Text>${ComponentName}</Text></View>
+  );
+}

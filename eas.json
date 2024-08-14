@@ -1,0 +1,27 @@
+{
+  "cli": {
+    "version": ">= 3.15.1"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "production": {
+      "distribution": "store",
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease --project-prop reactNativeArchitectures=arm64-v8a"
+      }
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
