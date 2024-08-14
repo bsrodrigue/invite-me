@@ -1,4 +1,4 @@
-# Lazy React Native v0.1
+# InviteMe (Invitation Tracking Application)
 
 ## Description
-lzrn (Lazy React Native) is an attempt to facilitate React Native Development by providing a set of tools (scripts) and a basic starting template
+Just a simple mobile application to manage and track your event invitations
