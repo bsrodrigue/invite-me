@@ -1,10 +1,10 @@
 import { createTheme } from "@rneui/themed";
 
 const commonColors = {
-  primary: "#265073",
+  primary: "#379777",
   primaryLight: "#C8D3DC",
-  black: "black",
-  white: "white",
+  black: "#45474B",
+  white: "#F5F7F8",
   blue: "#186ff4",
   green: "#9BCF53",
   yellow: "#FFF455",

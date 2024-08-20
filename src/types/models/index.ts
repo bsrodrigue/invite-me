@@ -1,14 +1,36 @@
 export interface CommonTimeAttributes {
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export interface ID {
   id: number;
 };
 
+export interface UUID {
+  uuid: string;
+};
+
 export type TransactionType = "Expense" | "Income" | "Transfer";
 export type AccountType = "Cash" | "Bank" | "Mobile Money" | "Wallet";
+
+export type UserEventStatus = "PENDING" | "ONGOING" | "DONE" | "CANCELLED" | "ARCHIVED";
+
+export interface Invitation {
+  hash?: string;
+  username?: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface UserEvent extends UUID, CommonTimeAttributes {
+  title: string;
+  description?: string;
+  startDateTime: string;
+  endDateTime: string;
+  status: UserEventStatus;
+  invitations: Invitation[];
+}
 
 export interface TransactionCategory {
   uuid?: string;

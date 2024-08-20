@@ -3,55 +3,30 @@ import { useTheme } from "@rneui/themed";
 import { FlatList, TouchableOpacity, View } from "react-native";
 import { RootStackParamList } from "../../types";
 import { Button, CardBottomSheet, ExpandingView, Text, TextInput } from "../../components";
-import { useImagePicker } from "../../hooks";
-import { useEffect, useState } from "react";
-import { useAccountStore, useBudgetStore, useCategoryStore, useTransactionStore, useUserStore } from "../../stores";
+import { useState } from "react";
 import { useAsyncStorage } from "../../lib/storage";
-import { notify } from "../../lib";
-import { b64ToUri } from '../../lib/base64';
+import { useUserStore } from "../../stores";
 
 type SettingsScreenProps = NativeStackScreenProps<RootStackParamList, 'Settings'>;
 
 export default function SettingsScreen({ navigation }: SettingsScreenProps) {
   const { theme: { colors: { error } } } = useTheme();
-  const { pickImage, imgBase64 } = useImagePicker({ fileName: "avatar.jpg" });
   const { user: { username }, update, clear: clearUser } = useUserStore();
   const { storeData, clearData } = useAsyncStorage();
   const [fullname, setFullname] = useState(username);
   const [userProfileEditorIsOpen, setUserProfileEditorIsOpen] = useState(false);
 
-  const { clear: clearAccounts } = useAccountStore();
-  const { clear: clearTransactions } = useTransactionStore();
-  const { clear: clearBudgets } = useBudgetStore();
-  const { clear: clearCategories } = useCategoryStore();
-
   const onChangeFullname = () => {
     update({ username: fullname });
     setUserProfileEditorIsOpen(false);
     storeData('username', fullname);
-    notify.success("Username updated");
   }
-
-  useEffect(() => {
-    const uri = b64ToUri('png', imgBase64);
-    if (imgBase64) {
-      update({ avatar: uri });
-      storeData('avatar', uri);
-    }
-
-  }, [imgBase64]);
 
   const settings = [
     {
       title: "Account Settings",
       children:
         [
-          {
-            title: "Change your avatar",
-            onPress: async () => {
-              await pickImage();
-            }
-          },
           {
             title: "Change your username",
             onPress: () => {
@@ -71,11 +46,6 @@ export default function SettingsScreen({ navigation }: SettingsScreenProps) {
             danger: true,
             onPress: () => {
               clearUser();
-              clearAccounts();
-              clearTransactions();
-              clearBudgets();
-              clearCategories();
-
               clearData();
             }
           },

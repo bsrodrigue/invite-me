@@ -73,34 +73,6 @@ export default function MainScreen({ navigation }: MainScreenProps) {
           }}
           name="Home"
           component={HomeScreen} />
-        <Tab.Screen
-          options={{
-            tabBarLabel: "Transactions",
-            tabBarIcon: ({ focused }) => <TabIcon icon="list-circle" type="ionicon" focused={focused} />,
-          }}
-          name="Transactions"
-          component={TransactionsScreen} />
-        <Tab.Screen
-          options={{
-            tabBarLabel: "Accounts",
-            tabBarIcon: ({ focused }) => <TabIcon icon="wallet" type="material" focused={focused} />,
-          }}
-          name="Accounts"
-          component={AccountsScreen} />
-        <Tab.Screen
-          options={{
-            tabBarLabel: "Budgets",
-            tabBarIcon: ({ focused }) => <TabIcon icon="savings" type="material" focused={focused} />,
-          }}
-          name="Budgets"
-          component={BudgetsScreen} />
-        <Tab.Screen
-          options={{
-            tabBarLabel: "Categories",
-            tabBarIcon: ({ focused }) => <TabIcon icon="tag" type="antdesign" focused={focused} />,
-          }}
-          name="Categories"
-          component={CategoriesScreen} />
       </Tab.Navigator>
     </View >
   )

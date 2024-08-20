@@ -1,140 +1,147 @@
 import { useTheme } from '@rneui/themed';
-import { useState } from 'react';
-import { View } from 'react-native';
+import { useEffect, useState } from 'react';
 import { ExpandingView } from '../ExpandingView';
 import { Row } from '../Row';
-import { FilterBadge } from '../FilterBadge';
 import { TextInput } from '../Input';
 import { Button } from '../Button';
-import { Transaction, TransactionType } from '../../types/models';
-import { transactionTypeColors, transactionTypes } from '../../config';
+import { Invitation, UserEvent } from '../../types/models';
 import { DateTimePicker } from '../DateTimePicker';
-import { Selector } from '../Selector';
-import { useAccountStore, useBudgetStore, useCategoryStore } from '../../stores';
 import Crypto from '../../lib/crypto';
 import { Text } from '../Text';
-import { CategoryPicker } from '../CategoryPicker';
-import { BudgetPicker } from '../BudgetPicker';
-import { AccountPicker } from '../AccountPicker';
+import { ScrollView, TouchableOpacity, View } from 'react-native';
+
+import * as Contacts from 'expo-contacts';
 
 interface CreateTransactionFormProps {
-  onCreate: (transaction: Transaction) => void;
+  onCreate: (event: UserEvent) => void;
 }
 
 export default function CreateTransactionForm({ onCreate }: CreateTransactionFormProps) {
-  const { theme: { colors: { primary } } } = useTheme();
-  const [transactionType, setTransactionType] = useState<TransactionType>("Expense");
+  const { theme: { colors: { primary, greyOutline } } } = useTheme();
   const [title, setTitle] = useState("");
-  const [amount, setAmount] = useState("0");
-  const [date, setDate] = useState(new Date());
-  const [time, setTime] = useState(new Date());
-  const [budgetId, setBudgetId] = useState("");
-  const [categoryId, setCategoryId] = useState("");
-  const [accountId, setAccountId] = useState("");
+  const [description, setDescription] = useState("");
+  const [startDate, setStartDate] = useState(new Date());
+  const [startTime, setStartTime] = useState(new Date());
+  const [endDate, setEndDate] = useState(new Date());
+  const [endTime, setEndTime] = useState(new Date());
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [contacts, setContacts] = useState<{
+    selected: boolean;
+    contact: Contacts.Contact;
+  }[]>([]);
 
-  const [sourceAccountId, setSourceAccountId] = useState("");
-  const [destinationAccountId, setDestinationAccountId] = useState("");
+  useEffect(() => {
+    async function loadContact() {
+      const { status } = await Contacts.requestPermissionsAsync();
 
-  const { items: categories } = useCategoryStore();
-  const { items: budgets } = useBudgetStore();
+      if (status !== 'granted') {
+        console.log('permission needed');
+        return;
+      }
 
-  const isTransfer = (transactionType === "Transfer");
+      const { data } = await Contacts.getContactsAsync({
+        fields: [
+          Contacts.Fields.Emails,
+          Contacts.Fields.PhoneNumbers,
+        ]
+      });
 
-  const isValid = title && amount && date && time;
-  const budget = budgets.find((budget) => budget.uuid === budgetId);
+      if (data.length) {
+        setContacts(data.map((d) => ({
+          contact: d,
+          selected: false
+        })));
+      }
+    }
+
+    loadContact();
+  }, []);
+
+  const isValid = title && startDate && startTime;
 
   const onSubmit = () => {
     const uuid = Crypto.generateRandomUUID();
 
-    const data: Transaction = {
+    const data: UserEvent = {
       uuid,
       title,
-      date: date.toISOString(),
-      time: time.toISOString(),
-      amount: parseFloat(amount),
-      type: transactionType,
-      accountId: budget?.linkedAccount || accountId,
-      budgetId: budget?.uuid || "",
-      categoryId,
-      sourceAccountId,
-      destinationAccountId
-    }
+      description,
+      status: "PENDING",
+      invitations,
+      startDateTime: '',
+      endDateTime: '',
+    };
 
     onCreate(data);
   };
 
   return (
     <ExpandingView style={{ paddingHorizontal: 10 }}>
-      <Row style={{ justifyContent: "space-between", alignItems: "center" }}>
-        <Text weight='700' style={{ fontSize: 18 }}>Create Transaction</Text>
-      </Row>
+      <ExpandingView>
+        <Row style={{ justifyContent: "space-between", alignItems: "center" }}>
+          <Text weight='700' style={{ fontSize: 18 }}>Create Event</Text>
+        </Row>
 
-      <Row style={{ gap: 5, marginVertical: 10 }}>
-        {transactionTypes.map((filter, index) => (
-          <FilterBadge
-            onPress={(value) => setTransactionType(value as TransactionType)}
-            activeColor={transactionTypeColors[transactionType] ?? primary}
-            label={filter} active={transactionType === filter} key={index} />
-        ))}
-      </Row>
+        <TextInput label='Event name' onChangeText={setTitle} />
+        <TextInput label='Event description' onChangeText={setDescription} />
 
-      <TextInput label={`${transactionType} name`} onChangeText={setTitle} />
+        <Text weight='700' style={{ fontSize: 12 }}>Event Start</Text>
+        <Row style={{ gap: 5 }}>
+          <DateTimePicker label="Date" containerStyle={{ flexGrow: 1 }} date={startDate} onChange={setStartDate} mode="date" />
+          <DateTimePicker label="Time" containerStyle={{ flexGrow: 1 }} date={startTime} onChange={setStartTime} mode="time" />
+        </Row>
 
-      <TextInput wrapperStyle={{ flexGrow: 1 }} label="Amount" keyboardType="numeric" onChangeText={setAmount} />
+        <Text weight='700' style={{ fontSize: 12 }}>Event End</Text>
+        <Row style={{ gap: 5 }}>
+          <DateTimePicker label="Date" containerStyle={{ flexGrow: 1 }} date={endDate} onChange={setEndDate} mode="date" />
+          <DateTimePicker label="Time" containerStyle={{ flexGrow: 1 }} date={endTime} onChange={setEndTime} mode="time" />
+        </Row>
 
-      {
-        !isTransfer && categories.length != 0 &&
-        (<CategoryPicker
-          currentId={categoryId}
-          onSelect={(id) => setCategoryId(id)} />)
-      }
-      <View>
-        {
-          !isTransfer && (
-            <BudgetPicker currentId={budgetId} onSelect={(id) => setBudgetId(id)} />
-          )
-        }
-      </View>
-      <View>
-        {
-          !isTransfer && !budget?.linkedAccount && (
-            <AccountPicker currentId={accountId} onSelect={(id) => setAccountId(id)} />
-          )
-        }
-      </View>
+        <View style={{
+          borderWidth: 1,
+          borderRadius: 10,
+          borderColor: greyOutline,
+          padding: 5
+        }}>
+          <Row style={{
+            alignItems: "center",
+            justifyContent: "space-between"
+          }}>
+            <Text weight='700' style={{ fontSize: 12 }}>Invitations</Text>
+            <Text weight='500' style={{ fontSize: 10, opacity: 0.5 }}>
+              Select contacts you want to invite
+            </Text>
+          </Row>
+          <TextInput label='Contact' placeholder='Search contact' onChangeText={setSearchTerm} />
 
-      {
-        isTransfer && (
-          <View style={{ flexGrow: 1, justifyContent: "space-between" }}>
-            <Text style={{
-              fontWeight: "bold",
-            }}>Source Account</Text>
-            <AccountPicker
-              currentId={sourceAccountId}
-              onSelect={(id) => setSourceAccountId(id)} />
-            {
-              sourceAccountId && (
-                <>
-                  <Text style={{
-                    fontWeight: "bold",
-                  }}>Destination Account</Text>
-                  <AccountPicker
-                    currentId={destinationAccountId}
-                    exclude={[sourceAccountId]}
-                    onSelect={(id) => setDestinationAccountId(id)} />
-                </>
-              )
+          <ScrollView style={{ maxHeight: 200 }}>
+            {contacts.map((contact) => (
+              <View key={contact?.contact?.id} style={{
+                borderWidth: 1,
+                borderColor: greyOutline,
+                borderRadius: 10,
+                padding: 5,
+                marginVertical: 1
+              }}>
+                <Row style={{ alignItems: "center", justifyContent: "space-between" }}>
+                  <Row>
+                    <Text weight='500'>{contact?.contact?.name}</Text>
+                  </Row>
 
-            }
-          </View>
+                  <Row>
+                    <TouchableOpacity>
+                      <Text weight='700'>Invite</Text>
+                    </TouchableOpacity>
+                  </Row>
+                </Row>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
 
-        )
-      }
+      </ExpandingView>
 
-      <Row style={{ gap: 5 }}>
-        <DateTimePicker label="Date" containerStyle={{ flexGrow: 1 }} date={date} onChange={setDate} mode="date" />
-        <DateTimePicker label="Time" containerStyle={{ flexGrow: 1 }} date={time} onChange={setTime} mode="time" />
-      </Row>
       <Button disabled={!isValid} onPress={onSubmit} title="Submit" />
     </ExpandingView>
   );

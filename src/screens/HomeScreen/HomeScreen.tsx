@@ -1,106 +1,160 @@
-import { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../types";
-import React, { useState } from "react";
-import { CardBottomSheet, CreateTransactionForm, EditTransactionForm, ExpandingView, FilterBadge, Row, ScreenDivider, TotalBalanceCard, TransactionList } from "../../components";
-import { View } from "react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Button,
+  CardBottomSheet,
+  EditTransactionForm, ExpandingView,
+  Row, Text
+} from "../../components";
 import { useTheme } from "@rneui/themed";
 import { FAB } from "@rneui/base";
-import { useTransactionStore } from "../../stores/transaction.store";
-import { Text } from "../../components";
-import { mom } from "../../lib/moment";
-import { setDayToStart, setMonthToStart, setWeekToStart } from "../../lib/datetime";
-import { debounce } from "../../lib/utils";
+import * as Contacts from 'expo-contacts';
+import { View } from "react-native";
+import * as Crypto from "expo-crypto"
+import * as Sharing from "expo-sharing";
+import QRCode from "react-native-qrcode-svg";
+import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
 
-type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+import FS from "../../lib/fs";
 
-const timeFilters = [
-  "Daily",
-  "Weekly",
-  "Monthly",
-];
 
-const timeFilterHandlers = {
-  "Daily": setDayToStart,
-  "Weekly": setWeekToStart,
-  "Monthly": setMonthToStart,
+interface Guest {
+  hasAttended: boolean;
+  contact: Contacts.Contact;
+  hash: string;
 }
 
-const timeFilterStrs = {
-  "Daily": "Today",
-  "Weekly": "This Week",
-  "Monthly": "This Month",
-}
 
-export default function HomeScreen({ navigation }: HomeScreenProps) {
-  const { theme: { colors: { white, black, primary } } } = useTheme();
-  const [createFormIsVisible, setCreateFormIsVisible] = useState(false);
+export default function HomeScreen() {
+  const { theme: { colors: { white, primary } } } = useTheme();
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [timeFilterIndex, setTimeFilter] = useState(0);
+  const [guests, setGuests] = useState<Guest[]>([]);
+  const [qrCode, setQrCode] = useState("");
+  const [permission, requestPermission] = useCameraPermissions();
+  const [svg, setSvg] = useState(null);
+  const [hashes, setHashes] = useState({});
 
-  const { items: transactions, create, update, remove } = useTransactionStore();
+  const openPhoneBook = async () => {
+    const contact = await Contacts.presentContactPickerAsync();
 
-  const timeFilter = timeFilterHandlers[timeFilters[timeFilterIndex]](new Date());
-  const timeFilterStr = timeFilterStrs[timeFilters[timeFilterIndex]];
-  const filtertedTransactions = transactions.filter((t) => new Date(t.createdAt) >= timeFilter)
+    if (!contact) return;
+
+    const data = `${contact.id}${contact.name}`;
+
+    const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, data, {
+      encoding: Crypto.CryptoEncoding.HEX,
+    });
+
+    hashes[hash] = {
+      hasAttended: false,
+      contact,
+      hash,
+    } as Guest;
+
+    setHashes(hashes);
+
+    setGuests([...guests, { hasAttended: false, contact, hash }]);
+  }
+
+  useEffect(() => {
+    async function init() {
+      const { status } = await Contacts.requestPermissionsAsync();
+
+      requestPermission();
+
+      if (status !== 'granted') {
+        console.log('permission needed');
+        return;
+      }
+    }
+
+    init();
+  }, []);
 
   return (
     <ExpandingView style={{ backgroundColor: white }}>
-      <View style={{ position: "relative", marginBottom: "25%" }}>
-        <ScreenDivider />
-        <View style={{
-          backgroundColor: black,
-          height: 100,
-          borderBottomLeftRadius: 10,
-          borderBottomRightRadius: 10,
-        }} />
-        <View style={{ paddingHorizontal: 15, position: "absolute", left: 0, right: 0, top: 25 }}>
-          <TotalBalanceCard />
-        </View>
-      </View>
+      {
+        guests.map((guest) => (
+          <View
+            key={guest.contact.id}
+            style={{
+              margin: 10,
+              paddingVertical: 5,
+              paddingHorizontal: 20,
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 5,
+              backgroundColor: "white"
+            }}>
+            <Row style={{
+              justifyContent: "space-between",
+              alignItems: "center"
+            }}>
+              <Text weight="700">{guest.contact?.name}</Text>
+              <Row style={{
+                alignItems: "center",
+                gap: 5
+              }}>
+                <Text>{guest.hasAttended ? "Validated" : "Not Yet"}</Text>
+                <Button color="warning" onPress={() => setQrCode(guest.hash)}>View</Button>
+                <Button color="blue" onPress={async () => {
+                  if (!svg) return;
+                  svg?.toDataURL(async (b64) => {
+                    const url = await FS.saveFile('code.png', b64);
+                    await Sharing.shareAsync(url, {
+                      dialogTitle: "Send Invitation Code",
+                    });
+                  });
 
-      <View style={{ paddingHorizontal: 20, marginBottom: 10 }}>
-        <View>
-          <Text weight="700" style={{ opacity: 0.5, marginBottom: 10 }}>Transactions</Text>
-          <Row style={{ gap: 5 }}>
-            {timeFilters.map((filter, index) => (
-              <FilterBadge
-                label={filter}
-                active={index === timeFilterIndex}
-                onPress={() => setTimeFilter(index)}
-                key={index} />
-            ))}
-          </Row>
-        </View>
-      </View>
-
-      <View style={{ paddingHorizontal: 20, flex: 1 }}>
-        <Text weight="700" style={{ fontSize: 12 }}>{`${mom(timeFilter).format("dddd - DD/MM/YY")}`}</Text>
-        <TransactionList
-          transactions={filtertedTransactions}
-          emptyStr={`No Transactions ${timeFilterStr}`}
-          onPress={setEditingTransaction}
-          contentContainerStyle={{
-            paddingBottom: 50
-          }}
-        />
-      </View>
-
+                }}>Share</Button>
+              </Row>
+            </Row>
+          </View>
+        ))
+      }
       <FAB
         onPress={() =>
-          setCreateFormIsVisible(true)}
-        title="Create Transaction"
+          openPhoneBook()
+        }
+        title="Add Guest"
         size="small" color={primary}
-        placement="right" titleStyle={{ fontSize: 12, fontFamily: "font-700" }} />
+        placement="right" titleStyle={{ fontSize: 12, fontFamily: "font-700" }}
+        style={{ zIndex: 100 }}
+      />
 
-      <CardBottomSheet
-        isVisible={createFormIsVisible}
-        onBackdropPress={() => setCreateFormIsVisible(false)}>
-        <CreateTransactionForm
-          onCreate={(transaction) => {
-            create(transaction);
-            setCreateFormIsVisible(false);
-          }} />
-      </CardBottomSheet>
+      <CameraView
+        style={{ flex: 0.5, margin: 10 }}
+        onBarcodeScanned={({ data }) => {
+          const guest = hashes[data];
+
+          console.log(data)
+
+          console.log(hashes)
+
+          if (!guest) {
+            console.error('not a guest');
+            return;
+          }
+
+          guest.hasAttended = true;
+
+          setGuests((prev) => {
+            return prev.map((g) => (g.hash === data) ? guest : g);
+          });
+        }}
+      >
+      </CameraView>
+
+      {
+        (qrCode) && (
+          <QRCode
+            value={qrCode}
+            size={50}
+            getRef={(c) => {
+              setSvg(c);
+            }}
+          />
+        )
+      }
 
       <CardBottomSheet
         isVisible={Boolean(editingTransaction)}
@@ -108,17 +162,14 @@ export default function HomeScreen({ navigation }: HomeScreenProps) {
       >
         <EditTransactionForm
           transaction={editingTransaction}
-          onEdit={(transaction) => {
-            update(transaction);
+          onEdit={() => {
             setEditingTransaction(null);
           }}
-          onDelete={(uuid) => {
-            remove(uuid);
+          onDelete={() => {
             setEditingTransaction(null);
           }}
         />
       </CardBottomSheet>
-
     </ExpandingView>
   );
 }
