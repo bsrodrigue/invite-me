@@ -1,6 +1,7 @@
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import {
+  EventDashboardScreen,
   MainScreen, SettingsScreen
 } from "../screens";
 
@@ -16,7 +17,10 @@ function PublicStack() {
         animation: "slide_from_right"
       }}>
       <Stack.Screen name='Main' component={MainScreen} />
-      <Stack.Screen name='Settings' component={SettingsScreen} options={{ headerShown: true, headerTitle: "Paramètres" }} />
+      <Stack.Screen name='EventDashboard' component={EventDashboardScreen} />
+      <Stack.Screen name='Settings'
+        component={SettingsScreen}
+        options={{ headerShown: true, headerTitle: "Paramètres" }} />
     </Stack.Navigator>
   );
 }

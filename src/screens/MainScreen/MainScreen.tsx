@@ -9,7 +9,7 @@ import { HomeScreen } from "../HomeScreen";
 import { AccountsScreen } from "../AccountsScreen";
 import { BudgetsScreen } from "../BudgetsScreen";
 import { CategoriesScreen } from "../CategoriesScreen";
-import { TransactionsScreen } from "../TransactionsScreen";
+import { EventsScreen } from "../EventsScreen";
 
 interface TabIconProps {
   icon: string;
@@ -51,7 +51,7 @@ export default function MainScreen({ navigation }: MainScreenProps) {
             paddingVertical: 10,
             height: 60,
             borderTopWidth: 0,
-            shadowColor: white
+            shadowColor: white,
           },
           tabBarLabelStyle: {
             fontSize: 10,
@@ -73,6 +73,13 @@ export default function MainScreen({ navigation }: MainScreenProps) {
           }}
           name="Home"
           component={HomeScreen} />
+        <Tab.Screen
+          options={{
+            tabBarLabel: "Events",
+            tabBarIcon: ({ focused }) => <TabIcon icon="event" type="material" focused={focused} />,
+          }}
+          name="Events"
+          component={EventsScreen} />
       </Tab.Navigator>
     </View >
   )

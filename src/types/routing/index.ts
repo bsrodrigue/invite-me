@@ -1,3 +1,5 @@
+import { UserEvent } from "../models";
+
 export type RootStackParamList = {
   Home: any;
   Welcome: any;
@@ -21,4 +23,8 @@ export type RootStackParamList = {
   Budgets: any;
   Categories: any;
   Transactions: any;
+  Events: any;
+  EventDashboard: {
+    event: UserEvent;
+  };
 };

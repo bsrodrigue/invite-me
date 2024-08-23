@@ -1,11 +1,12 @@
 import { BottomSheet, Card } from "@rneui/base";
 import { ReactNode } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, ViewStyle } from "react-native";
 
 type CardBottomSheetProps = {
   isVisible?: boolean;
   onBackdropPress?: () => void;
   children?: ReactNode;
+  style?: ViewStyle;
 }
 
 const styles = StyleSheet.create({
@@ -15,16 +16,17 @@ const styles = StyleSheet.create({
     borderTopEndRadius: 25,
     flex: 1,
     paddingHorizontal: 10,
+    overflow: "hidden"
   }
 });
 
-export default function CardBottomSheet({ isVisible, onBackdropPress, children }: CardBottomSheetProps) {
+export default function CardBottomSheet({ isVisible, onBackdropPress, children, style }: CardBottomSheetProps) {
 
   return (
     <BottomSheet
       onBackdropPress={onBackdropPress}
       isVisible={isVisible}>
-      <Card containerStyle={styles.bottomSheet}>
+      <Card containerStyle={[styles.bottomSheet, style]}>
         {children}
       </Card>
     </BottomSheet>

@@ -1,4 +1,4 @@
-import { ThemeProvider } from "@rneui/themed";
+import { ThemeProvider, useTheme } from "@rneui/themed";
 import { decode } from "base-64";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -13,6 +13,8 @@ if (typeof atob === 'undefined') {
   global.atob = decode;
 }
 
+const black = lightTheme.lightColors.black;
+
 export default function App() {
   const { isLoadingComplete, session } = useCachedResources();
 
@@ -25,8 +27,8 @@ export default function App() {
 
   return (
     <ThemeProvider theme={lightTheme}>
-      <StatusBar hidden translucent />
-      <SafeAreaView style={{ flex: 1, backgroundColor: "transparent" }}>
+      <StatusBar translucent animated style="light" />
+      <SafeAreaView style={{ flex: 1, backgroundColor: black }}>
         <SessionProvider initialSession={session}>
           <RootStackNavigator />
         </SessionProvider>

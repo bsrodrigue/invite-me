@@ -21,7 +21,11 @@ export default function Header({ onPressSettings, screen }: HeaderProps) {
   const username = truncate(user?.username || "User", 15);
 
   return (
-    <View style={{ backgroundColor: black, alignItems: "center", flexDirection: "row", justifyContent: "center", padding: 15 }}>
+    <View style={{
+      backgroundColor: black, alignItems: "center",
+      flexDirection: "row", justifyContent: "center",
+      padding: 15, borderBottomRightRadius: 20,
+    }}>
       <View style={{ flexDirection: "row", alignItems: "center", flexGrow: 1 }}>
         <View >
           <Text style={{ color: white, fontSize: 12, opacity: 0.5 }}  >Welcome back</Text>

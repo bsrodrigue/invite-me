@@ -1,176 +1,162 @@
-import React, { useEffect, useState } from "react";
+import React, { } from "react";
 import {
-  Button,
-  CardBottomSheet,
-  EditTransactionForm, ExpandingView,
-  Row, Text
+  CenteringView,
+  ExpandingView,
+  Row,
+  Text
 } from "../../components";
-import { useTheme } from "@rneui/themed";
-import { FAB } from "@rneui/base";
-import * as Contacts from 'expo-contacts';
-import { View } from "react-native";
-import * as Crypto from "expo-crypto"
-import * as Sharing from "expo-sharing";
-import QRCode from "react-native-qrcode-svg";
-import { CameraView, CameraType, useCameraPermissions } from "expo-camera";
+import { Icon, useTheme } from "@rneui/themed";
+import { useEventStore } from "../../stores";
+import { Dimensions, TouchableOpacity, View } from "react-native";
+import { Image } from "expo-image";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../types";
+import weddingCover from "../../assets/images/covers/wedding.jpg";
+import { UserEvent } from "../../types/models";
+import { FlatList } from "react-native";
 
-import FS from "../../lib/fs";
+type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>;
+export default function HomeScreen({ navigation, route }: HomeScreenProps) {
+  const { theme: { colors: { white, primary, greyOutline, black } } } = useTheme();
+  const { items: events } = useEventStore();
+  const windowWidth = Dimensions.get('window').width
 
-
-interface Guest {
-  hasAttended: boolean;
-  contact: Contacts.Contact;
-  hash: string;
-}
-
-
-export default function HomeScreen() {
-  const { theme: { colors: { white, primary } } } = useTheme();
-  const [editingTransaction, setEditingTransaction] = useState(null);
-  const [guests, setGuests] = useState<Guest[]>([]);
-  const [qrCode, setQrCode] = useState("");
-  const [permission, requestPermission] = useCameraPermissions();
-  const [svg, setSvg] = useState(null);
-  const [hashes, setHashes] = useState({});
-
-  const openPhoneBook = async () => {
-    const contact = await Contacts.presentContactPickerAsync();
-
-    if (!contact) return;
-
-    const data = `${contact.id}${contact.name}`;
-
-    const hash = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, data, {
-      encoding: Crypto.CryptoEncoding.HEX,
-    });
-
-    hashes[hash] = {
-      hasAttended: false,
-      contact,
-      hash,
-    } as Guest;
-
-    setHashes(hashes);
-
-    setGuests([...guests, { hasAttended: false, contact, hash }]);
-  }
-
-  useEffect(() => {
-    async function init() {
-      const { status } = await Contacts.requestPermissionsAsync();
-
-      requestPermission();
-
-      if (status !== 'granted') {
-        console.log('permission needed');
-        return;
-      }
-    }
-
-    init();
-  }, []);
+  const ongoingEvents = events?.filter((event) => event.status === 'ONGOING');
 
   return (
     <ExpandingView style={{ backgroundColor: white }}>
+      <View style={{
+        paddingHorizontal: 20,
+        paddingVertical: 10
+      }}>
+        <Text style={{
+          fontSize: 28
+        }} weight="700">Organize your best events</Text>
+        <Text style={{
+          fontSize: 14,
+          opacity: 0.5
+        }} weight="500">
+          Create and manage all your events and guests with ease.
+        </Text>
+      </View>
       {
-        guests.map((guest) => (
-          <View
-            key={guest.contact.id}
-            style={{
-              margin: 10,
-              paddingVertical: 5,
-              paddingHorizontal: 20,
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 5,
-              backgroundColor: "white"
-            }}>
-            <Row style={{
-              justifyContent: "space-between",
-              alignItems: "center"
-            }}>
-              <Text weight="700">{guest.contact?.name}</Text>
-              <Row style={{
-                alignItems: "center",
-                gap: 5
-              }}>
-                <Text>{guest.hasAttended ? "Validated" : "Not Yet"}</Text>
-                <Button color="warning" onPress={() => setQrCode(guest.hash)}>View</Button>
-                <Button color="blue" onPress={async () => {
-                  if (!svg) return;
-                  svg?.toDataURL(async (b64) => {
-                    const url = await FS.saveFile('code.png', b64);
-                    await Sharing.shareAsync(url, {
-                      dialogTitle: "Send Invitation Code",
-                    });
-                  });
-
-                }}>Share</Button>
-              </Row>
-            </Row>
-          </View>
-        ))
-      }
-      <FAB
-        onPress={() =>
-          openPhoneBook()
-        }
-        title="Add Guest"
-        size="small" color={primary}
-        placement="right" titleStyle={{ fontSize: 12, fontFamily: "font-700" }}
-        style={{ zIndex: 100 }}
-      />
-
-      <CameraView
-        style={{ flex: 0.5, margin: 10 }}
-        onBarcodeScanned={({ data }) => {
-          const guest = hashes[data];
-
-          console.log(data)
-
-          console.log(hashes)
-
-          if (!guest) {
-            console.error('not a guest');
-            return;
-          }
-
-          guest.hasAttended = true;
-
-          setGuests((prev) => {
-            return prev.map((g) => (g.hash === data) ? guest : g);
-          });
-        }}
-      >
-      </CameraView>
-
-      {
-        (qrCode) && (
-          <QRCode
-            value={qrCode}
-            size={50}
-            getRef={(c) => {
-              setSvg(c);
-            }}
-          />
+        ongoingEvents.length === 0 && (
+          <CenteringView>
+            <View style={{ opacity: 0.5 }}>
+              <Icon size={50} name="event" type="material" color={black} />
+              <Text weight="700" style={{ marginTop: 10 }}>No Events On going...</Text>
+            </View>
+          </CenteringView>
         )
       }
+      <View style={{
+        paddingHorizontal: 20,
+        paddingVertical: 10
+      }}>
+        <Row style={{
+          marginBottom: 10,
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}>
+          <Text weight="700" style={{
+            fontSize: 14
+          }}>Ongoing Events</Text>
+          <Text weight="500" style={{
+            fontSize: 12,
+            opacity: 0.5
+          }}>See all</Text>
+        </Row>
+      </View>
+      <View>
+        <FlatList
+          data={ongoingEvents}
+          showsHorizontalScrollIndicator={false}
+          horizontal
+          renderItem={({ item }) => (
+            <EventCard
+              event={item}
+              onPress={(event) => {
+                navigation.push('EventDashboard', {
+                  event,
+                })
+              }} />
 
-      <CardBottomSheet
-        isVisible={Boolean(editingTransaction)}
-        onBackdropPress={() => setEditingTransaction(null)}
-      >
-        <EditTransactionForm
-          transaction={editingTransaction}
-          onEdit={() => {
-            setEditingTransaction(null);
-          }}
-          onDelete={() => {
-            setEditingTransaction(null);
-          }}
+          )}
         />
-      </CardBottomSheet>
+      </View>
     </ExpandingView>
   );
+}
+
+interface EventCardProps {
+  event: UserEvent;
+  onPress?: (event: UserEvent) => void;
+}
+
+function EventCard({ event, onPress }: EventCardProps) {
+  const { theme: { colors: { white, primary, greyOutline, black } } } = useTheme();
+  const windowHeight = Dimensions.get('window').height
+  const windowWidth = Dimensions.get('window').width
+
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        onPress(event);
+      }}
+      key={event.uuid}
+      style={{
+        borderRadius: 10,
+        padding: 5,
+        backgroundColor: "white",
+        borderWidth: 1,
+        borderColor: greyOutline,
+        width: (windowWidth * 0.9),
+        height: (windowHeight * 0.3),
+        marginHorizontal: 5
+      }}>
+      <View style={{
+        flex: 1
+      }}>
+        <View
+          style={{
+            borderRadius: 5,
+            position: "relative",
+            flex: 1
+          }}
+        >
+          <Image
+            source={weddingCover}
+            contentFit="cover"
+            style={{
+              height: "100%",
+              borderRadius: 5,
+            }}
+          />
+          <View style={{ position: "absolute" }}>
+          </View>
+        </View>
+        <View style={{
+          paddingHorizontal: 5
+        }}>
+          <Row style={{
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}>
+            <Text weight="700" style={{
+              fontSize: 14,
+            }}>{event.title}</Text>
+
+            <Text
+              weight="600"
+              style={{
+                opacity: 0.7,
+              }}
+            >{event.guests.length} Guests</Text>
+          </Row>
+        </View>
+      </View>
+    </TouchableOpacity>
+
+  )
 }
 

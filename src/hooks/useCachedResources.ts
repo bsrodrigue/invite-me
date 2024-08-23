@@ -24,7 +24,7 @@ export default function useCachedResources() {
   const { update } = useUserStore();
 
   async function loadData() {
-    const stores = ['events'];
+    const stores = ['user-events'];
     const initializers = [initEvents];
 
     const avatar = JSON.parse(await getData("avatar"));

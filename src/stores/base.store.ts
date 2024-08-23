@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { useAsyncStorage } from '../lib/storage';
+import Crypto from '../lib/crypto';
 
 interface BaseState<T> {
   items: T[];
@@ -22,6 +23,7 @@ export default function createBaseStore<T>(namespace: string) {
 
     create: (item) => {
       const createdAt = new Date().toISOString();
+      item.uuid = Crypto.generateRandomUUID();
       item.createdAt = createdAt;
       item.updatedAt = createdAt;
       set((state) => {

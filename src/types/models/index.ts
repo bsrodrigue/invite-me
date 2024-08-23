@@ -1,35 +1,43 @@
-export interface CommonTimeAttributes {
-  createdAt?: string;
-  updatedAt?: string;
-};
+import * as Contacts from 'expo-contacts';
 
 export interface ID {
-  id: number;
+  id?: number;
 };
 
 export interface UUID {
-  uuid: string;
+  uuid?: string;
+};
+
+export interface CommonTimeAttributes extends ID, UUID {
+  createdAt?: string;
+  updatedAt?: string;
 };
 
 export type TransactionType = "Expense" | "Income" | "Transfer";
 export type AccountType = "Cash" | "Bank" | "Mobile Money" | "Wallet";
 
-export type UserEventStatus = "PENDING" | "ONGOING" | "DONE" | "CANCELLED" | "ARCHIVED";
+export type UserEventStatus = "NOT_STARTED" | "PENDING" | "ONGOING" | "DONE" | "CANCELLED" | "ARCHIVED";
 
-export interface Invitation {
-  hash?: string;
-  username?: string;
+export interface Guest {
+  hasAttended: boolean;
+  phoneNumber?: string;
+  whatstappNumber?: string;
   email?: string;
-  phone?: string;
+  fullname?: string;
+  nationalId?: string;
+  passportId?: string;
+  hash: string;
 }
 
-export interface UserEvent extends UUID, CommonTimeAttributes {
+export interface UserEvent extends CommonTimeAttributes {
   title: string;
   description?: string;
-  startDateTime: string;
-  endDateTime: string;
+  startDate?: string;
+  endDate?: string;
+  startTime?: string;
+  endTime?: string;
   status: UserEventStatus;
-  invitations: Invitation[];
+  guests: Guest[];
 }
 
 export interface TransactionCategory {
